@@ -1,28 +1,27 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <NTPClient.h>
-#include <WiFiUdp.h>
 
 // Pines
-#define PIR_PIN 33   // Sensor PIR
-#define LED_PIN 32   // LED
+#define PIR_PIN 34   // Sensor PIR
+#define LED_PIN 2    // LED
 
 // Wi-Fi
 const char* ssid = "Familia Monte";
 const char* password = "Brasil@oi23";
 
-// MQTT Broker (coloque o IP do seu broker Mosquitto)
-const char* mqtt_server = "192.168.100.243"; // <-- IP da máquina que roda o Mosquitto
+// MQTT Broker
+const char* mqtt_server = "192.168.100.43";
 const int mqtt_port = 1883;
-const char* mqtt_topic = "PIR";
+const char* mqtt_topic = "busStop/lightDetection";
 
-// Objeto WiFi e MQTT
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// NTP para hora
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", -4 * 3600, 60000); // Horário de Manaus
+const int busStopId = 4;
+
+// Controle de tempo
+unsigned long ultimoTeste = 0;
+const unsigned long intervalo = 5000; // 15 segundos
 
 void setup() {
   Serial.begin(115200);
@@ -34,9 +33,7 @@ void setup() {
 
   client.setServer(mqtt_server, mqtt_port);
 
-  timeClient.begin();
-
-  Serial.println("Sensor PIR iniciado. Aguardando movimento...");
+  Serial.println("Sensor PIR iniciado. Verificando a cada 15 segundos...");
 }
 
 void loop() {
@@ -45,28 +42,22 @@ void loop() {
   }
   client.loop();
 
-  timeClient.update();
+  unsigned long agora = millis();
 
-  int estadoPIR = digitalRead(PIR_PIN);
+  if (agora - ultimoTeste >= intervalo) {
+    ultimoTeste = agora;
 
-  if (estadoPIR == HIGH) {
-    digitalWrite(LED_PIN, HIGH);
-    Serial.println("Movimento detectado! LED ON");
+    int estadoPIR = digitalRead(PIR_PIN);
+    bool detectado = (estadoPIR == HIGH);
 
-    String hora = timeClient.getFormattedTime();
-    Serial.println("Hora do evento: " + hora);
+    digitalWrite(LED_PIN, detectado ? HIGH : LOW);
 
-    String mensagem = "{\"evento\": \"movimento_detectado\", \"hora\": \"" + hora + "\"}";
+    Serial.print("Movimento detectado? ");
+    Serial.println(detectado ? "Sim - LED ON" : "Não - LED OFF");
 
+    String mensagem = "{\"busStopId\": " + String(busStopId) + ", \"detection\": " + (detectado ? "true" : "false") + "}";
     client.publish(mqtt_topic, mensagem.c_str());
-
-    delay(2000); // Delay para não enviar muitas vezes seguidas
-  } else {
-    digitalWrite(LED_PIN, LOW);
-    Serial.println("Sem movimento... LED OFF");
   }
-
-  delay(2000);
 }
 
 void conectarWiFi() {
