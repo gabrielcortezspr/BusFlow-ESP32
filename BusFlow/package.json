@@ -1,0 +1,30 @@
+{
+  "name": "busflow",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/italomonte/BusFlowAPI.git",
+  "author": "Ítalo Monte <italopessoal@outlook.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "@types/mqtt": "^2.5.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.8.2",
+    "@types/cors": "^2.8.19",
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "mqtt": "^5.13.0",
+    "mqtt-packet": "^9.0.2",
+    "prisma": "^6.8.2"
+  }
+}

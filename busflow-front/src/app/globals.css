@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #F7FAFC; /* Fundo cinza claro */
+  color: #4A5568; /* Texto cinza escuro */
+}

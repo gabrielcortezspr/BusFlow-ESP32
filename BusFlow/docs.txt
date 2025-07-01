@@ -1,0 +1,5 @@
+
+- conectar na rede: 192.168.100.43
+- adiciona ip no .env
+- rodar o mosquitto
+- rodar api

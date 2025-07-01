@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bus {
+  id        Int      @id @default(autoincrement())
+  line      Int
+  capacity  Int
+  license   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buses         BusStop[]       @relation("BusStopBus")
+  BusOccurrence BusOccurrence[]
+  PeopleHistory PeopleHistory[]
+}
+
+model BusStop {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  latitude  Int
+  longitude Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buses             Bus[]               @relation("BusStopBus")
+  BusStopOccurrence BusStopOccurrence[]
+  BusStopHistory    BusStopHistory[]
+  LightingHistory   LightingHistory[]
+}
+
+model BusStopBus {
+  id        Int      @id @default(autoincrement())
+  busId     Int
+  busStopId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BusOccurrence {
+  id        Int      @id @default(autoincrement())
+  busId     Int
+  title     String   @db.VarChar(50)
+  category  String   @db.VarChar(50)
+  text      String   @db.VarChar(250)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bus Bus @relation(fields: [busId], references: [id])
+}
+
+model BusStopOccurrence {
+  id        Int      @id @default(autoincrement())
+  busStopId Int
+  title     String   @db.VarChar(50)
+  text      String   @db.VarChar(250)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  busStop BusStop @relation(fields: [busStopId], references: [id])
+}
+
+model BusStopHistory {
+  id          Int      @id @default(autoincrement())
+  busStopId   Int
+  peopleCount Int
+  dateTime    DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  busStop BusStop @relation(fields: [busStopId], references: [id])
+}
+
+model LightingHistory {
+  id        Int      @id @default(autoincrement())
+  busStopId Int
+  light     Boolean
+  dateTime  DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  busStop BusStop @relation(fields: [busStopId], references: [id])
+}
+
+model PeopleHistory {
+  id          Int      @id @default(autoincrement())
+  busId       Int
+  peopleCount Int
+  dateTime    DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bus Bus @relation(fields: [busId], references: [id])
+}
