@@ -1,3 +1,28 @@
-/busflow-front/node_modules
-/BusFlow/node_modules
+# Dependencies
+node_modules/
+
+# Build output
+BusFlow/dist/
+busflow-front/.next/
+busflow-front/out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment / secrets (use the *.example files as templates)
+.env
+.env.*
+!.env.example
+**/secrets.h
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Xcode
+xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# Large ML model (download separately, see README)
 BusFlowCameraApp/BusFlowCameraApp/YOLOv3FP16.mlmodel

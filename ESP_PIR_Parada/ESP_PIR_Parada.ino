@@ -1,27 +1,32 @@
+// BusFlow - Detecção de presença na parada
+// Um sensor PIR verifica periodicamente se há alguém na parada, acende um LED
+// local e publica o estado via MQTT no tópico busStop/lightDetection.
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-// Pines
+#include "secrets.h"  // copie secrets.example.h -> secrets.h
+
+// Identificador da parada cadastrada na API
+const int BUS_STOP_ID = 4;
+
+// Pinos
 #define PIR_PIN 34   // Sensor PIR
 #define LED_PIN 2    // LED
 
-// Wi-Fi
-const char* ssid = "Familia Monte";
-const char* password = "Brasil@oi23";
-
-// MQTT Broker
-const char* mqtt_server = "192.168.100.43";
-const int mqtt_port = 1883;
-const char* mqtt_topic = "busStop/lightDetection";
+// MQTT
+const char* MQTT_TOPIC = "busStop/lightDetection";
+const char* MQTT_CLIENT_ID = "ESP32_PIR";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-const int busStopId = 4;
-
 // Controle de tempo
+const unsigned long INTERVALO_MS = 5000;  // 5 segundos
 unsigned long ultimoTeste = 0;
-const unsigned long intervalo = 5000; // 15 segundos
+
+void conectarWiFi();
+void reconnectMQTT();
 
 void setup() {
   Serial.begin(115200);
@@ -31,12 +36,15 @@ void setup() {
 
   conectarWiFi();
 
-  client.setServer(mqtt_server, mqtt_port);
+  client.setServer(MQTT_SERVER, MQTT_PORT);
 
-  Serial.println("Sensor PIR iniciado. Verificando a cada 15 segundos...");
+  Serial.printf("Sensor PIR iniciado. Verificando a cada %lu ms...\n", INTERVALO_MS);
 }
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    conectarWiFi();
+  }
   if (!client.connected()) {
     reconnectMQTT();
   }
@@ -44,36 +52,38 @@ void loop() {
 
   unsigned long agora = millis();
 
-  if (agora - ultimoTeste >= intervalo) {
+  if (agora - ultimoTeste >= INTERVALO_MS) {
     ultimoTeste = agora;
 
-    int estadoPIR = digitalRead(PIR_PIN);
-    bool detectado = (estadoPIR == HIGH);
+    bool detectado = digitalRead(PIR_PIN) == HIGH;
 
     digitalWrite(LED_PIN, detectado ? HIGH : LOW);
 
     Serial.print("Movimento detectado? ");
     Serial.println(detectado ? "Sim - LED ON" : "Não - LED OFF");
 
-    String mensagem = "{\"busStopId\": " + String(busStopId) + ", \"detection\": " + (detectado ? "true" : "false") + "}";
-    client.publish(mqtt_topic, mensagem.c_str());
+    String mensagem = "{\"busStopId\": " + String(BUS_STOP_ID) +
+                      ", \"detection\": " + (detectado ? "true" : "false") + "}";
+    if (!client.publish(MQTT_TOPIC, mensagem.c_str())) {
+      Serial.println("Falha ao publicar no MQTT");
+    }
   }
 }
 
 void conectarWiFi() {
   Serial.println();
   Serial.print("Conectando ao Wi-Fi ");
-  Serial.println(ssid);
+  Serial.println(WIFI_SSID);
 
-  WiFi.begin(ssid, password);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("Wi-Fi conectado.");
+  Serial.println("\nWi-Fi conectado.");
   Serial.print("IP: ");
   Serial.println(WiFi.localIP());
 }
@@ -81,7 +91,7 @@ void conectarWiFi() {
 void reconnectMQTT() {
   while (!client.connected()) {
     Serial.print("Conectando ao MQTT...");
-    if (client.connect("ESP32_PIR")) {
+    if (client.connect(MQTT_CLIENT_ID)) {
       Serial.println("Conectado ao MQTT!");
     } else {
       Serial.print("Falhou, rc=");
