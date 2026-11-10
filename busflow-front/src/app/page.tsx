@@ -2,7 +2,9 @@
 "use client";
 import React, { useState } from "react";
 import { ParadaItem } from "@/components/ParadaItem";
-import { OnibusItem } from "@/components/OnibusItem";
+import { OnibusItem, CorOnibus } from "@/components/OnibusItem";
+
+// TODO: substituir os dados mockados pelas rotas GET /bus e GET /bus-stop da API.
 
 const paradas = [
   {
@@ -16,7 +18,7 @@ const paradas = [
   },
 ];
 
-const onibus = [
+const onibus: { linha: string; descricao: string; ocupacao: string; cor: CorOnibus }[] = [
   {
     linha: "671",
     descricao: "T2 / Centro / Cachoeirinha",
@@ -32,7 +34,7 @@ const onibus = [
 ];
 
 function App() {
-  const [abaAtiva, setAbaAtiva] = useState("parada");
+  const [abaAtiva, setAbaAtiva] = useState<"parada" | "onibus">("parada");
   const [busca, setBusca] = useState("");
 
   const paradasFiltradas = paradas.filter((p) =>
@@ -46,7 +48,7 @@ function App() {
   return (
     <div className="flex h-screen font-sans bg-gray-50">
       {/* Lado esquerdo */}
-      <aside className="w-[600px] bg-white shadow-lg p-6 flex flex-col gap-6">
+      <aside className="w-full max-w-[600px] bg-white shadow-lg p-6 flex flex-col gap-6">
         <h1 className="text-4xl font-bold text-purple-600 text-center">
           BusFlow
         </h1>
@@ -81,8 +83,8 @@ function App() {
         <div className="flex items-center border border-gray-300 rounded-full px-3 py-1 w-72 focus-within:ring-2 focus-within:ring-purple-300 bg-white shadow-sm mx-auto">
           <input
             type="text"
-            placeholder={`Pesquise por um ${
-              abaAtiva === "parada" ? "parada" : "ônibus"
+            placeholder={`Pesquise por ${
+              abaAtiva === "parada" ? "uma parada" : "um ônibus"
             }`}
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -107,23 +109,21 @@ function App() {
         {/* Lista */}
         <div className="flex flex-col gap-4">
           {abaAtiva === "parada"
-            ? paradasFiltradas.map((p, idx) => (
+            ? paradasFiltradas.map((p) => (
                 <ParadaItem
-                  key={idx}
+                  key={p.nome}
                   nome={p.nome}
                   ocupacao={p.ocupacao}
                   alerta={p.alerta}
-                  className="bg-gray-100 border-l-4 border-green-500 p-4 rounded-lg shadow-sm"
                 />
               ))
-            : onibusFiltrados.map((o, idx) => (
+            : onibusFiltrados.map((o) => (
                 <OnibusItem
-                  key={idx}
+                  key={o.linha}
                   linha={o.linha}
                   descricao={o.descricao}
                   ocupacao={o.ocupacao}
                   cor={o.cor}
-                  className="bg-gray-100 border-l-4 border-blue-500 p-4 rounded-lg shadow-sm"
                 />
               ))}
         </div>

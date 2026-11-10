@@ -1,8 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 
 body {
-  background-color: #F7FAFC; /* Fundo cinza claro */
-  color: #4A5568; /* Texto cinza escuro */
+  background-color: #f7fafc; /* Fundo cinza claro */
+  color: #4a5568; /* Texto cinza escuro */
 }

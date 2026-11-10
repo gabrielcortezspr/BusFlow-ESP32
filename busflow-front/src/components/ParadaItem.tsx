@@ -4,10 +4,10 @@ interface ParadaProps {
   nome: string;
   ocupacao: string;
   alerta?: string;
-  className?: string; 
+  className?: string;
 }
 
-export function ParadaItem({ nome, ocupacao, alerta, className }: ParadaProps) {
+export function ParadaItem({ nome, ocupacao, alerta, className = "" }: ParadaProps) {
   const borderColor = alerta ? "border-red-400" : "border-yellow-400";
 
   return (

@@ -19,8 +19,10 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
     
     private var currentPersonCount = 0
     private var timer: Timer?
-    private var ip: String = "192.168.207.23"
-    private var port: String = "8888"
+    // Endereço da API BusFlow na rede local e parada monitorada por este dispositivo.
+    private let ip: String = "192.168.0.10"
+    private let port: String = "8888"
+    private let busStopId: Int = 4
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,7 +49,7 @@ class CameraController: UIViewController, AVCaptureVideoDataOutputSampleBufferDe
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let payload: [String: Any] = [
-            "busStopId": 4,
+            "busStopId": busStopId,
             "quantity": currentPersonCount,
         ]
         
