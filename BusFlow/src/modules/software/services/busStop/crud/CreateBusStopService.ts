@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../../../../prisma";
 
 export class CreateBusStopService {
-  async execute(busStop: BusStop) {
-    const prisma = new PrismaClient();
-    const busStopCreated = await prisma.busStop.create({ data: busStop });
-    return busStopCreated;
+  async execute(data: Prisma.BusStopCreateInput) {
+    return prisma.busStop.create({ data });
   }
 }

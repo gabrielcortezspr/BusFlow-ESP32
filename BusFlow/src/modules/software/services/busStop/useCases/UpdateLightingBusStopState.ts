@@ -1,26 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../../../prisma";
+import { NotFoundError } from "../../../../../shared/errors";
 
-/// UpdateLightingBusStopState
 export class UpdateLightingBusStopState {
-  private prisma = new PrismaClient();
+  async execute(busStopId: number, detection: boolean) {
+    const busStop = await prisma.busStop.findUnique({ where: { id: busStopId } });
+    if (!busStop) throw new NotFoundError("Bus stop not found");
 
-  async execute(id: number, data: any) {
-    const busStop = await this.prisma.busStop.findUnique({
-      where: { id },
+    return prisma.lightingHistory.create({
+      data: { busStopId, light: detection, dateTime: new Date() },
     });
-
-    if (!busStop) {
-      throw new Error("Bus stop not found");
-    }
-
-    const newHistory = await this.prisma.lightingHistory.create({
-      data: {
-        busStopId: id,
-        light: data.detection,
-        dateTime: new Date(),
-      },
-    });
-
-    return newHistory;
   }
 }

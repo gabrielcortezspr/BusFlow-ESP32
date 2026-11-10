@@ -1,27 +1,20 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../../../prisma";
+import { NotFoundError } from "../../../../../shared/errors";
 
-///
 export class GetQuantityOfPeopleInBusStopService {
-  private prisma = new PrismaClient();
+  async execute(busStopId: number) {
+    const busStop = await prisma.busStop.findUnique({ where: { id: busStopId } });
+    if (!busStop) throw new NotFoundError("Bus stop not found");
 
-  async execute(id: number) {
-    const busStop = await this.prisma.busStop.findUnique({
-      where: { id },
+    const lastHistory = await prisma.busStopHistory.findFirst({
+      where: { busStopId },
+      orderBy: { dateTime: "desc" },
     });
 
-    if (!busStop) {
-      throw new Error("Bus stop not found");
-    }
-
-    const lastBusStopHistory = await this.prisma.busStopHistory.findFirst({
-      where: {
-        busStopId: id,
-      },
-      orderBy: {
-        dateTime: "desc",
-      },
-    });
-
-    return lastBusStopHistory;
+    return {
+      busStopId,
+      peopleCount: lastHistory?.peopleCount ?? 0,
+      dateTime: lastHistory?.dateTime ?? null,
+    };
   }
 }

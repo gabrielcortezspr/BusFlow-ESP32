@@ -1,27 +1,42 @@
-import axios from "axios";
+import { AddOneInBusPeopleHistoryService } from "../../software/services/bus/useCases/AddOneInBusPeopleHistoryService";
+import { RemoveOneInBusPeopleHistoryService } from "../../software/services/bus/useCases/RemoveOneInBusPeopleHistoryService";
+import { UpdateLightingBusStopState } from "../../software/services/busStop/useCases/UpdateLightingBusStopState";
+import { parseDate, parseId } from "../../../shared/errors";
 
-export function handleHardwareMessage(topic: string, message: Buffer) {
-  const rawPayload = JSON.parse(message.toString());
+export const TOPICS = {
+  busIn: "bus/in",
+  busOut: "bus/out",
+  busStopLightDetection: "busStop/lightDetection",
+} as const;
 
-  console.log("topic:", topic);
-  console.log("payload:", rawPayload);
+/**
+ * Recebe as mensagens publicadas pelos ESP32 e aciona diretamente os casos de
+ * uso (sem passar por uma chamada HTTP para a própria API).
+ */
+export async function handleHardwareMessage(topic: string, message: Buffer) {
+  const payload = JSON.parse(message.toString());
+  console.log(`[mqtt] ${topic}:`, payload);
 
-  const ip = process.env.IP_SERVER;
+  switch (topic) {
+    case TOPICS.busIn:
+      await new AddOneInBusPeopleHistoryService().execute(
+        parseId(payload.busId, "busId"),
+        parseDate(payload.date)
+      );
+      break;
 
-  // Inicializa payload com o valor original
-  let payload = rawPayload;
+    case TOPICS.busOut:
+      await new RemoveOneInBusPeopleHistoryService().execute(
+        parseId(payload.busId, "busId"),
+        parseDate(payload.date)
+      );
+      break;
 
-  // Corrige o tipo apenas para o tópico de detecção de luz
-  if (topic === "busStop/lightDetection") {
-    payload = {
-      ...rawPayload,
-      detection:
-        rawPayload.detection === "true" || rawPayload.detection === true,
-    };
-    axios.post(`http://${ip}:8888/bus-stop/lightDetection`, payload);
-  } else if (topic === "bus/in") {
-    axios.post(`http://${ip}:8888/bus/in`, payload);
-  } else if (topic === "bus/out") {
-    axios.post(`http://${ip}:8888/bus/out`, payload);
+    case TOPICS.busStopLightDetection:
+      await new UpdateLightingBusStopState().execute(
+        parseId(payload.busStopId, "busStopId"),
+        payload.detection === true || payload.detection === "true"
+      );
+      break;
   }
 }

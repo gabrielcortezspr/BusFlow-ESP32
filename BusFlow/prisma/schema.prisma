@@ -29,8 +29,8 @@ model Bus {
 model BusStop {
   id        Int      @id @default(autoincrement())
   name      String   @db.VarChar(255)
-  latitude  Int
-  longitude Int
+  latitude  Float
+  longitude Float
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -1,11 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-import { Bus } from "../../../@types/index";
+import { Prisma } from "@prisma/client";
+import prisma from "../../../../../prisma";
 
 export class CreateBusService {
-  async execute(bus: Bus) {
-    const prisma = new PrismaClient();
-    console.log("bus", bus);
-    const busCreated = await prisma.bus.create({ data: bus });
-    return busCreated;
+  async execute(data: Prisma.BusCreateInput) {
+    return prisma.bus.create({ data });
   }
 }

@@ -1,12 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import prisma from "../../../../../prisma";
+import { NotFoundError } from "../../../../../shared/errors";
 
 export class UpdateBusStopService {
-  async execute(id: number, busStop: BusStop) {
-    const prisma = new PrismaClient();
-    const busStopUpdated = await prisma.busStop.update({
-      where: { id: id },
-      data: busStop,
-    });
-    return busStopUpdated;
+  async execute(id: number, data: Prisma.BusStopUpdateInput) {
+    const busStop = await prisma.busStop.findUnique({ where: { id } });
+    if (!busStop) throw new NotFoundError("Bus stop not found");
+
+    return prisma.busStop.update({ where: { id }, data });
   }
 }

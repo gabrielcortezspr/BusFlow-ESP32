@@ -1,13 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../../../prisma";
 
 export class ListBusStopService {
   async execute() {
-    const prisma = new PrismaClient();
-    const busStops = await prisma.busStop.findMany({
-      include: {
-        BusStopHistory: true,
-      },
+    return prisma.busStop.findMany({
+      include: { BusStopHistory: { orderBy: { dateTime: "asc" } } },
     });
-    return busStops;
   }
 }

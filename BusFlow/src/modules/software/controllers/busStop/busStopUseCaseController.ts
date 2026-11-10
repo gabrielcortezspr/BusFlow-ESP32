@@ -1,55 +1,33 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 
 import { UpdateQuantityOfPeopleInBusStopService } from "../../services/busStop/useCases/UpdateQuantityOfPeopleInBusStopService";
 import { GetQuantityOfPeopleInBusStopService } from "../../services/busStop/useCases/GetQuantityOfPeopleInBusStopService";
 import { UpdateLightingBusStopState } from "../../services/busStop/useCases/UpdateLightingBusStopState";
+import { parseId } from "../../../../shared/errors";
 
 export class BusStopUseCaseController {
-  updateQuantityOfPeopleInBusStop = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const { busStopId } = req.body;
-      const service = new UpdateQuantityOfPeopleInBusStopService();
-      const result = await service.execute(busStopId, req.body);
-      return res.json(result);
-    } catch (error) {
-      next(error);
-      return;
-    }
+  // POST /bus-stop/quantity  { busStopId, quantity }  (enviado pelo app de câmera)
+  updateQuantityOfPeopleInBusStop = async (req: Request, res: Response) => {
+    const busStopId = parseId(req.body?.busStopId, "busStopId");
+    const result = await new UpdateQuantityOfPeopleInBusStopService().execute(
+      busStopId,
+      Number(req.body?.quantity)
+    );
+    res.status(201).json(result);
   };
 
-  getQuantityOfPeopleInBusStop = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const { busStopId } = req.query;
-      const service = new GetQuantityOfPeopleInBusStopService();
-      const result = await service.execute(Number(busStopId));
-      return res.json(result);
-    } catch (error) {
-      next(error);
-      return;
-    }
+  // GET /bus-stop/quantity?busStopId=1
+  getQuantityOfPeopleInBusStop = async (req: Request, res: Response) => {
+    const busStopId = parseId(req.query.busStopId, "busStopId");
+    const result = await new GetQuantityOfPeopleInBusStopService().execute(busStopId);
+    res.json(result);
   };
 
-  updateLightingBusStopState = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      const { busStopId } = req.body;
-      const service = new UpdateLightingBusStopState();
-      const result = await service.execute(busStopId, req.body);
-      return res.json(result);
-    } catch (error) {
-      next(error);
-      return;
-    }
+  // POST /bus-stop/lightDetection  { busStopId, detection }
+  updateLightingBusStopState = async (req: Request, res: Response) => {
+    const busStopId = parseId(req.body?.busStopId, "busStopId");
+    const detection = req.body?.detection === true || req.body?.detection === "true";
+    const result = await new UpdateLightingBusStopState().execute(busStopId, detection);
+    res.status(201).json(result);
   };
 }
