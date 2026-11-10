@@ -1,197 +1,190 @@
-# BusFlow - Sistema de Monitoramento Inteligente de Transporte Público
+# BusFlow — Monitoramento Inteligente de Transporte Público
 
-## 📋 Descrição
+O **BusFlow** é um protótipo IoT que mede, em tempo real, a ocupação de ônibus e de paradas.
+Sensores conectados a ESP32 detectam entradas/saídas de passageiros e presença nas paradas,
+publicam eventos via **MQTT** e uma API **Node.js/TypeScript** persiste o histórico em **PostgreSQL**.
 
-O **BusFlow** é um sistema completo de monitoramento inteligente para transporte público que utiliza tecnologias embarcadas (IoT) para contar automaticamente a quantidade de pessoas em ônibus e detectar a presença de passageiros em paradas. O sistema oferece uma solução integrada para otimizar a gestão do transporte público através de dados em tempo real.
+## Arquitetura
 
-## 🎯 Objetivos
+```mermaid
+flowchart LR
+    subgraph Dispositivos
+        A["ESP32 + 2x HC-SR04<br/>(ônibus)"]
+        B["ESP32 + PIR<br/>(parada)"]
+        C["App iOS + YOLOv3<br/>(contagem por câmera)"]
+    end
+    M[("Mosquitto<br/>MQTT broker")]
+    API["API BusFlow<br/>Express + Prisma"]
+    DB[("PostgreSQL")]
+    F["Dashboard<br/>Next.js"]
 
-- **Monitoramento Automático**: Contagem automática de passageiros entrando e saindo dos ônibus
-- **Detecção de Presença**: Identificação de pessoas aguardando em paradas
-- **Dados em Tempo Real**: Informações atualizadas sobre ocupação e demanda
-- **Interface Web**: Dashboard para visualização e gestão dos dados
-- **Aplicativo Mobile**: Captura de imagens para análise adicional
-
-## 🏗️ Arquitetura do Sistema
-
-O projeto é composto por múltiplos componentes que trabalham em conjunto:
-
-### 🔧 Hardware (ESP32)
-- **ESP_2Sonares_Onibus**: Sistema de contagem de passageiros usando sensores ultrassônicos
-- **ESP_PIR_Parada**: Detecção de presença em paradas usando sensor PIR
-- **ESP_screen**: Display OLED para informações locais
-
-### 🌐 Backend (Node.js/TypeScript)
-- **API REST**: Servidor Express com endpoints para gestão de dados
-- **MQTT Broker**: Comunicação em tempo real entre dispositivos
-- **Banco de Dados**: PostgreSQL com Prisma ORM
-- **Estrutura Modular**: Arquitetura limpa com controllers e use cases
-
-### 🖥️ Frontend (Next.js/React)
-- **Dashboard Web**: Interface moderna com Tailwind CSS
-- **Componentes Reutilizáveis**: Cards para ônibus e paradas
-- **Responsivo**: Design adaptável para diferentes dispositivos
-
-### 📱 Mobile (iOS/SwiftUI)
-- **Aplicativo iOS**: Captura de imagens para análise adicional
-- **Interface Nativa**: Desenvolvido com SwiftUI
-
-## 🚀 Funcionalidades Principais
-
-### Contagem de Passageiros
-- **Sensores Ultrassônicos**: Detectam entrada e saída de pessoas
-- **Prevenção de Dupla Contagem**: Lógica para evitar contagens incorretas
-- **Timestamp ISO 8601**: Registro preciso de horários
-- **Comunicação MQTT**: Envio de dados em tempo real
-
-### Monitoramento de Paradas
-- **Sensor PIR**: Detecção de movimento/presença
-- **Indicador Visual**: LED para status local
-- **Intervalo Configurável**: Verificações a cada 5 segundos
-- **Histórico de Detecções**: Armazenamento de dados
-
-### Gestão de Dados
-- **CRUD Completo**: Operações para ônibus e paradas
-- **Histórico Temporal**: Rastreamento de ocupação ao longo do tempo
-- **Relatórios**: Análise de padrões de uso
-- **API RESTful**: Integração com sistemas externos
-
-## 📊 Estrutura do Banco de Dados
-
-### Entidades Principais
-- **Bus**: Informações dos ônibus (linha, capacidade, placa)
-- **BusStop**: Dados das paradas (nome, localização)
-- **PeopleHistory**: Histórico de ocupação dos ônibus
-- **BusStopHistory**: Histórico de ocupação das paradas
-- **LightingHistory**: Registro de detecções de presença
-
-## 🛠️ Tecnologias Utilizadas
-
-### Hardware
-- **ESP32**: Microcontrolador principal
-- **Sensores HC-SR04**: Ultrassônicos para contagem
-- **Sensor PIR**: Detecção de movimento
-- **Display OLED SSD1306**: Interface local
-- **WiFi**: Conectividade de rede
-
-### Software
-- **Backend**: Node.js, TypeScript, Express
-- **Frontend**: Next.js, React, Tailwind CSS
-- **Mobile**: SwiftUI, iOS
-- **Banco**: PostgreSQL, Prisma ORM
-- **Comunicação**: MQTT, HTTP/REST
-- **Tempo**: NTP Client para sincronização
-
-## 📁 Estrutura do Projeto
-
-```
-BusFlow-ESP32/
-├── ESP_2Sonares_Onibus/          # Sistema de contagem de ônibus
-├── ESP_PIR_Parada/               # Detecção de presença em paradas
-├── ESP_screen/                   # Display OLED
-├── BusFlow/                      # Backend API
-│   ├── src/
-│   │   ├── modules/
-│   │   │   ├── hardware/         # Integração MQTT
-│   │   │   └── software/         # Controllers e Use Cases
-│   │   └── server.ts
-│   └── prisma/                   # Schema do banco
-├── busflow-front/                # Frontend Web
-│   └── src/
-│       ├── app/                  # Páginas Next.js
-│       └── components/           # Componentes React
-├── BusFlowCameraApp/             # App iOS
-└── libraries/                    # Bibliotecas Arduino
+    A -- "bus/in, bus/out" --> M
+    B -- "busStop/lightDetection" --> M
+    M --> API
+    C -- "POST /bus-stop/quantity" --> API
+    API --> DB
+    F -. "REST (roadmap)" .-> API
 ```
 
-## 🚀 Como Executar
+| Componente | Pasta | Tecnologias |
+|---|---|---|
+| Contador de passageiros | [`ESP_2Sonares_Onibus/`](ESP_2Sonares_Onibus) | ESP32, 2× HC-SR04, NTP, MQTT |
+| Detector de presença na parada | [`ESP_PIR_Parada/`](ESP_PIR_Parada) | ESP32, sensor PIR, LED, MQTT |
+| Teste do display | [`ESP_screen/`](ESP_screen) | ESP32, OLED SSD1306 |
+| API | [`BusFlow/`](BusFlow) | Node.js, TypeScript, Express 5, Prisma, MQTT.js |
+| Dashboard web | [`busflow-front/`](busflow-front) | Next.js 15, React 19, Tailwind CSS 4 |
+| App de câmera | [`BusFlowCameraApp/`](BusFlowCameraApp) | Swift, UIKit/SwiftUI, Vision, Core ML (YOLOv3) |
+
+### Como funciona a contagem
+
+- **Ônibus:** um sensor ultrassônico fica na porta de entrada e outro na de saída. Quando algo passa a
+  menos de 30 cm, o ESP32 publica um evento **apenas na borda de subida** da detecção, evitando contar
+  a mesma pessoa várias vezes. Cada evento leva o `busId` e um timestamp ISO 8601 em UTC (via NTP).
+- **API:** cada evento gera um **novo registro** em `PeopleHistory` com a contagem anterior ±1
+  (nunca negativa), dentro de uma transação — o histórico completo de ocupação é preservado.
+- **Parada:** o PIR é lido a cada 5 s; o estado é refletido no LED e salvo em `LightingHistory`.
+  O app iOS conta pessoas na imagem com YOLOv3 e envia a quantidade a cada 3 s.
+
+## Modelo de dados
+
+![Diagrama do banco de dados](docs/database-diagram.png)
+
+O schema completo está em [`BusFlow/prisma/schema.prisma`](BusFlow/prisma/schema.prisma).
+
+## Como executar
 
 ### Pré-requisitos
-- Node.js 18+
-- PostgreSQL
-- Arduino IDE
-- Xcode (para app iOS)
-- ESP32 DevKit
 
-### Backend
+- Node.js 18+
+- PostgreSQL 14+
+- [Mosquitto](https://mosquitto.org/) 2.x
+- Arduino IDE (ou arduino-cli) com o core **ESP32** instalado
+- Xcode (opcional, para o app iOS)
+
+### 1. Broker MQTT
+
 ```bash
 cd BusFlow
-npm install
-npm run prisma:generate
-npm run dev
+mosquitto -c mosquitto.conf -v
 ```
 
-### Frontend
+### 2. API
+
+```bash
+cd BusFlow
+cp .env.example .env          # ajuste DATABASE_URL e MQTT_HOST
+npm install
+npx prisma migrate deploy     # cria as tabelas
+npm run dev                   # http://localhost:8888
+```
+
+Scripts disponíveis: `dev`, `build`, `start`, `typecheck`, `prisma:generate`, `prisma:migrate`.
+
+### 3. Dashboard
+
 ```bash
 cd busflow-front
 npm install
-npm run dev
+npm run dev                   # http://localhost:3000
 ```
 
-### Hardware
-1. Conecte os sensores aos pinos especificados
-2. Configure as credenciais WiFi no código
-3. Configure o endereço do servidor MQTT
-4. Faça upload do código para o ESP32
+### 4. Firmware (ESP32)
 
-## 📡 Endpoints da API
+As credenciais **não ficam no código**. Em cada sketch:
 
-### Ônibus
-- `GET /bus` - Listar ônibus
-- `POST /bus` - Criar ônibus
-- `GET /bus/quantity` - Quantidade de pessoas
-- `POST /bus/in` - Registrar entrada
-- `POST /bus/out` - Registrar saída
-
-### Paradas
-- `GET /bus-stop` - Listar paradas
-- `POST /bus-stop` - Criar parada
-- `GET /bus-stop/quantity` - Quantidade de pessoas
-- `POST /bus-stop/lightDetection` - Detecção de presença
-
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/busflow"
-IP_SERVER="192.168.100.43"
+```bash
+cp ESP_2Sonares_Onibus/secrets.example.h ESP_2Sonares_Onibus/secrets.h
+cp ESP_PIR_Parada/secrets.example.h      ESP_PIR_Parada/secrets.h
 ```
 
-### Configuração MQTT
-- Broker: `192.168.100.43:1883`
-- Tópicos: `bus/in`, `bus/out`, `busStop/lightDetection`
+Preencha `WIFI_SSID`, `WIFI_PASSWORD` e `MQTT_SERVER` (IP da máquina que roda o Mosquitto).
+O `secrets.h` está no `.gitignore`. Ajuste também `BUS_ID` / `BUS_STOP_ID` no topo do `.ino`
+para corresponder aos registros criados na API.
 
-## 📈 Monitoramento e Análise
+Bibliotecas necessárias (instale pelo Library Manager):
 
-O sistema oferece:
-- **Dados em Tempo Real**: Ocupação atual de ônibus e paradas
-- **Histórico Temporal**: Análise de padrões de uso
-- **Alertas**: Notificações de alta ocupação
-- **Relatórios**: Estatísticas de utilização
+| Biblioteca | Usada em |
+|---|---|
+| PubSubClient (Nick O'Leary) | sonares, PIR |
+| NTPClient (Fabrice Weinberg) | sonares |
+| Adafruit SSD1306 + Adafruit GFX | display |
 
-## 🤝 Contribuição
+### 5. App iOS (opcional)
 
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+Baixe o modelo `YOLOv3FP16.mlmodel` da [galeria de modelos Core ML da Apple](https://developer.apple.com/machine-learning/models/)
+para `BusFlowCameraApp/BusFlowCameraApp/` (o arquivo não é versionado por ser grande) e ajuste o
+IP da API em `CameraController.swift`.
 
-## 📄 Licença
+## API REST
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Todas as respostas são JSON. Erros seguem o formato `{ "error": "mensagem" }` com status 400/404/500.
 
-## 👥 Autores
+| Método | Rota | Descrição | Corpo / query |
+|---|---|---|---|
+| GET | `/health` | Health check | — |
+| GET | `/bus` | Lista ônibus com histórico de ocupação | — |
+| POST | `/bus` | Cria ônibus | `{ line, capacity, license }` |
+| PUT | `/bus/:id` | Atualiza ônibus | `{ line?, capacity?, license? }` |
+| DELETE | `/bus/:id` | Remove ônibus | — |
+| GET | `/bus/quantity` | Ocupação atual do ônibus | `?busId=1` |
+| POST | `/bus/in` | Registra entrada | `{ busId, date? }` |
+| POST | `/bus/out` | Registra saída | `{ busId, date? }` |
+| GET | `/bus-stop` | Lista paradas com histórico | — |
+| POST | `/bus-stop` | Cria parada | `{ name, latitude, longitude }` |
+| PUT | `/bus-stop/:id` | Atualiza parada | `{ name?, latitude?, longitude? }` |
+| DELETE | `/bus-stop/:id` | Remove parada | — |
+| GET | `/bus-stop/quantity` | Última contagem da parada | `?busStopId=1` |
+| POST | `/bus-stop/quantity` | Registra contagem (app de câmera) | `{ busStopId, quantity }` |
+| POST | `/bus-stop/lightDetection` | Registra presença (PIR) | `{ busStopId, detection }` |
 
-- **Ítalo Monte** - *Desenvolvimento inicial* - [italomonte](https://github.com/italomonte)
+> Por compatibilidade, `PUT`/`DELETE` também aceitam o id no corpo (`id` para ônibus, `busStopId` para paradas).
 
-## 🙏 Agradecimentos
+### Tópicos MQTT
 
-- Comunidade Arduino/ESP32
-- Bibliotecas Adafruit
-- Framework Next.js
-- Prisma ORM
+| Tópico | Publicado por | Payload |
+|---|---|---|
+| `bus/in` | ESP32 sonares | `{"busId": 3, "date": "2025-05-20T10:00:00.000Z"}` |
+| `bus/out` | ESP32 sonares | `{"busId": 3, "date": "2025-05-20T10:00:00.000Z"}` |
+| `busStop/lightDetection` | ESP32 PIR | `{"busStopId": 4, "detection": true}` |
 
----
+A API se inscreve nesses tópicos e chama os casos de uso diretamente; mensagens malformadas são
+registradas no log e descartadas sem derrubar o servidor.
 
-**BusFlow** - Transformando o transporte público através da tecnologia IoT 🚌✨
+## Estrutura do projeto
+
+```
+BusFlow-ESP32/
+├── ESP_2Sonares_Onibus/      # Firmware: contagem de passageiros
+├── ESP_PIR_Parada/           # Firmware: presença na parada
+├── ESP_screen/               # Firmware: teste do display OLED
+├── BusFlow/                  # API
+│   ├── prisma/               # Schema e migrations
+│   └── src/
+│       ├── config/           # Leitura de variáveis de ambiente
+│       ├── modules/
+│       │   ├── hardware/mqtt # Cliente MQTT e handlers dos tópicos
+│       │   └── software/     # Controllers e services (CRUD + casos de uso)
+│       ├── shared/           # Erros e validação
+│       ├── routes.ts
+│       └── server.ts
+├── busflow-front/            # Dashboard Next.js
+├── BusFlowCameraApp/         # App iOS
+└── docs/                     # Diagramas
+```
+
+## Limitações conhecidas e roadmap
+
+- [ ] Dashboard consumir a API (hoje usa dados mockados)
+- [ ] Autenticação na API e no broker MQTT (hoje `allow_anonymous`, adequado apenas para rede local)
+- [ ] Testes automatizados e CI
+- [ ] Docker Compose com PostgreSQL + Mosquitto + API
+- [ ] Mostrar a ocupação no display OLED do ônibus
+
+## Autores
+
+- **Gabriel Cortez** — [@gabrielcortezspr](https://github.com/gabrielcortezspr)
+- **Ítalo Monte** — [@italomonte](https://github.com/italomonte)
+
+## Licença
+
+Distribuído sob a licença MIT. Veja [LICENSE](LICENSE).
